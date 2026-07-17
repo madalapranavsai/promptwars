@@ -1,0 +1,22 @@
+services:
+  app:
+    container_name: stadiumsense-ai
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    # Automatically mounts local secrets like GEMINI_API_KEY into the runtime environment
+    env_file:
+      - .env
+    restart: unless-stopped
+    # Healthcheck ensures the container and its internal server are active and accessible
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
