@@ -117,7 +117,7 @@ export function analyzeContext(text: string): ContextAnalysis {
     "bin full", "cannot find seat", "need translator"
   ];
 
-  if (emergencyKeywords.some(kw => normalized.includes(kw)) || category === "MEDICAL" && normalized.includes("unconscious") || category === "LOST_CHILD") {
+  if (emergencyKeywords.some(kw => normalized.includes(kw))) {
     riskLevel = "EMERGENCY";
   } else if (highKeywords.some(kw => normalized.includes(kw)) || category === "SECURITY" || category === "CROWDING") {
     riskLevel = "HIGH";
@@ -125,6 +125,12 @@ export function analyzeContext(text: string): ContextAnalysis {
     riskLevel = "MEDIUM";
   } else {
     riskLevel = "LOW";
+  }
+
+  // Single source of truth safety override upgrades
+  const overrideReason = getEmergencyOverrideReason(category, normalized);
+  if (overrideReason) {
+    riskLevel = "EMERGENCY";
   }
 
   // 4. Intent Detection
@@ -226,3 +232,21 @@ export function analyzeContext(text: string): ContextAnalysis {
     missingDetails
   };
 }
+
+export function getEmergencyOverrideReason(category: string, normalizedText: string): string | null {
+  const text = normalizedText.toLowerCase();
+  if (category === "MEDICAL" && (text.includes("unconscious") || text.includes("breathing shallow") || text.includes("not breathing") || text.includes("chest pain") || text.includes("fainted"))) {
+    return "Override: Patient is unconscious or fainted. Enforced EMERGENCY risk level. ";
+  }
+  if (category === "SECURITY" && (text.includes("weapon") || text.includes("gun") || text.includes("knife") || text.includes("bomb") || text.includes("fire"))) {
+    return "Override: Active security threat or weapon detected in input. Escalated to EMERGENCY risk level. ";
+  }
+  if (category === "CROWDING" && (text.includes("crush") || text.includes("trample") || text.includes("bottleneck"))) {
+    return "Override: Critical crowd crush or trample risk detected. Escalated to EMERGENCY risk level. ";
+  }
+  if (category === "LOST_CHILD") {
+    return "Override: Safeguarding rule enforced. Lost child recovery is treated as an EMERGENCY priority. ";
+  }
+  return null;
+}
+

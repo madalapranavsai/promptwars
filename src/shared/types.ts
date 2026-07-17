@@ -1,6 +1,9 @@
+export type CategoryType = "MEDICAL" | "SECURITY" | "ACCESSIBILITY" | "LOST_CHILD" | "LOST_ITEM" | "CROWDING" | "SUSTAINABILITY" | "MULTILINGUAL" | "TRANSPORT" | "NAVIGATION" | "GENERAL";
+export type RiskLevelType = "EMERGENCY" | "HIGH" | "MEDIUM" | "LOW";
+
 export interface ContextAnalysis {
-  category: "MEDICAL" | "SECURITY" | "ACCESSIBILITY" | "LOST_CHILD" | "LOST_ITEM" | "CROWDING" | "SUSTAINABILITY" | "MULTILINGUAL" | "TRANSPORT" | "NAVIGATION" | "GENERAL";
-  riskLevel: "EMERGENCY" | "HIGH" | "MEDIUM" | "LOW";
+  category: CategoryType;
+  riskLevel: RiskLevelType;
   intent: "REPORT" | "REQUEST_HELP" | "ASK";
   detectedLanguage: "en" | "es" | "fr" | "de" | "pt" | "ja" | "zh" | "ko" | "ar";
   missingDetails: string[];
@@ -44,12 +47,12 @@ export interface TestDetail {
   name: string;
   passed: boolean;
   input: string;
-  category: string;
-  riskLevel: string;
+  category: CategoryType;
+  riskLevel: RiskLevelType;
   escalationRequired: boolean;
   escalationTarget: string;
-  expectedCategory: string;
-  expectedRisk: string;
+  expectedCategory: CategoryType;
+  expectedRisk: RiskLevelType;
   expectedEscalation: boolean;
   expectedTarget: string;
   errorDetails?: string;
@@ -65,7 +68,7 @@ export interface IncidentRecord {
   id: string;
   timestamp: string;
   situation: string;
-  category: string;
-  riskLevel: string;
+  category: CategoryType;
+  riskLevel: RiskLevelType;
   recommendation: string;
 }

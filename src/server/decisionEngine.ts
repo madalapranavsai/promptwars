@@ -1,8 +1,9 @@
 import { ContextAnalysis, DecisionResult } from "../shared/types";
+import { getEmergencyOverrideReason } from "./contextAnalyzer";
 
 interface CategoryRule {
   escalationTarget: string;
-  recommendedActionPath: string | ((risk: string) => string);
+  recommendedActionPath: (risk: string) => string;
   safetyWarnings?: string[];
   deterministicSteps: string[];
 }
@@ -40,7 +41,7 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
   },
   LOST_CHILD: {
     escalationTarget: "Venue Operations Center (VOC) & Safeguarding Officer",
-    recommendedActionPath: "Coordinated Multi-Sector Sweep & Perimeter Gate Lockout Alert",
+    recommendedActionPath: () => "Coordinated Multi-Sector Sweep & Perimeter Gate Lockout Alert",
     safetyWarnings: [
       "A volunteer must NEVER be left alone with a child. Always ensure at least two volunteers or staff are present.",
       "Do not broadcast the child's full name over public speakers to ensure child safeguarding."
@@ -68,7 +69,7 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
   },
   ACCESSIBILITY: {
     escalationTarget: "Spectator Services Mobility Team",
-    recommendedActionPath: "Mobility Shuttle/Golf Cart Dispatch & Elevator Bypass Routing",
+    recommendedActionPath: () => "Mobility Shuttle/Golf Cart Dispatch & Elevator Bypass Routing",
     deterministicSteps: [
       "Assess if the spectator requires a manual wheelchair or a motorized golf cart.",
       "Accompany the visitor to the nearest designated priority elevator or ramp.",
@@ -77,7 +78,7 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
   },
   LOST_ITEM: {
     escalationTarget: "Stadium Lost & Found Registry Office",
-    recommendedActionPath: "Digital Item Entry & Guest Retrieval Ticket Issuance",
+    recommendedActionPath: () => "Digital Item Entry & Guest Retrieval Ticket Issuance",
     deterministicSteps: [
       "Inspect the item visually for security hazards before handling (do not open unattended luggage).",
       "Record the item description, seat location found, and timestamp into the operational database.",
@@ -86,7 +87,7 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
   },
   SUSTAINABILITY: {
     escalationTarget: "Venue Facilities & Recycling Zero-Waste Crew",
-    recommendedActionPath: "Janitorial Service Dispatch & Recycling Bin Re-sort Operations",
+    recommendedActionPath: () => "Janitorial Service Dispatch & Recycling Bin Re-sort Operations",
     deterministicSteps: [
       "Assess if there are hazardous waste components involved (spills, glass).",
       "Mark the sorting bin or trash area for priority pickup by the zero-waste crew.",
@@ -95,7 +96,7 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
   },
   NAVIGATION: {
     escalationTarget: "Wayfinding Volunteer Coordinator",
-    recommendedActionPath: "Standard Wayfinding Assistance & Digital Map Sharing",
+    recommendedActionPath: () => "Standard Wayfinding Assistance & Digital Map Sharing",
     safetyWarnings: [
       "Do not send guests through restricted team/media tunnels or exit-only emergency doors."
     ],
@@ -107,7 +108,7 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
   },
   TRANSPORT: {
     escalationTarget: "Transport & Traffic Operations Center (TOC)",
-    recommendedActionPath: "Transit Dispatch & Park-and-Ride Shuttle Routing",
+    recommendedActionPath: () => "Transit Dispatch & Park-and-Ride Shuttle Routing",
     safetyWarnings: [
       "Remind guests to remain on designated walkways and avoid walking onto active vehicle roadways."
     ],
@@ -119,7 +120,7 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
   },
   MULTILINGUAL: {
     escalationTarget: "Volunteer Language Services Hub",
-    recommendedActionPath: "Bilingual Ambassador Dispatch & Digital Language Service Connection",
+    recommendedActionPath: () => "Bilingual Ambassador Dispatch & Digital Language Service Connection",
     deterministicSteps: [
       "Identify the spectator's preferred language (e.g., Spanish, French, German, Arabic).",
       "Use the preset multilingual translation script or the remote translation hot-channel.",
@@ -133,27 +134,16 @@ export function getDeterministicDecision(
   userText: string
 ): DecisionResult {
   const category = analysis.category;
-  const riskLevel = analysis.riskLevel;
-  const textLower = userText.toLowerCase();
-
+  let riskLevel = analysis.riskLevel;
   let escalationRequired = false;
   let operationalReasoning = "";
 
   // 1. Risk Level Upgrades & Security/Safety Overrides
-  if (category === "MEDICAL" && (textLower.includes("unconscious") || textLower.includes("breathing shallow") || textLower.includes("not breathing") || textLower.includes("chest pain") || textLower.includes("fainted"))) {
-    operationalReasoning += "Override: Patient is unconscious or fainted. Enforced EMERGENCY risk level. ";
-  }
-
-  if (category === "SECURITY" && (textLower.includes("weapon") || textLower.includes("gun") || textLower.includes("knife") || textLower.includes("bomb") || textLower.includes("fire"))) {
-    operationalReasoning += "Override: Active security threat or weapon detected in input. Engraded to EMERGENCY risk level. ";
-  }
-
-  if (category === "CROWDING" && (textLower.includes("crush") || textLower.includes("trample") || textLower.includes("bottleneck"))) {
-    operationalReasoning += "Override: Critical crowd crush or trample risk detected. Escalated to EMERGENCY risk level. ";
-  }
-
-  if (category === "LOST_CHILD") {
-    operationalReasoning += "Override: Safeguarding rule enforced. Lost child recovery is treated as an EMERGENCY priority. ";
+  const overrideReason = getEmergencyOverrideReason(category, userText);
+  if (overrideReason) {
+    riskLevel = "EMERGENCY";
+    analysis.riskLevel = "EMERGENCY";
+    operationalReasoning += overrideReason;
   }
 
   // Escalation criteria
@@ -164,7 +154,7 @@ export function getDeterministicDecision(
   // 2. Fetch deterministic mappings from config lookup
   const rule = CATEGORY_RULES[category] || {
     escalationTarget: "Sector Supervisor",
-    recommendedActionPath: "Standard Volunteer Support & Guest Relations Guidance",
+    recommendedActionPath: () => "Standard Volunteer Support & Guest Relations Guidance",
     deterministicSteps: [
       "Understand the fan's core inquiry or problem calmly.",
       "Refer to the matchday pocket-guide or stadium signage for direct resolution.",
@@ -173,9 +163,7 @@ export function getDeterministicDecision(
   };
 
   const escalationTarget = rule.escalationTarget;
-  const recommendedActionPath = typeof rule.recommendedActionPath === "function"
-    ? rule.recommendedActionPath(riskLevel)
-    : rule.recommendedActionPath;
+  const recommendedActionPath = rule.recommendedActionPath(riskLevel);
 
   const safetyWarnings = rule.safetyWarnings ? [...rule.safetyWarnings] : [];
   const deterministicSteps = [...rule.deterministicSteps];

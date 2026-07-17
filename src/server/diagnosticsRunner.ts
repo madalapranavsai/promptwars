@@ -1,7 +1,7 @@
 import { analyzeContext } from "./contextAnalyzer";
 import { getDeterministicDecision } from "./decisionEngine";
 import { generateAIResponse } from "./aiAdapter";
-import { TestDetail, TestSuiteResults } from "../shared/types";
+import { TestDetail, TestSuiteResults, CategoryType, RiskLevelType } from "../shared/types";
 
 export const TEST_CASES = [
   {
@@ -98,7 +98,7 @@ export async function runDecisionEngineTests(): Promise<TestSuiteResults> {
     
     const analysis = analyzeContext(t.input);
     if (t.urgencyOverride) {
-      analysis.riskLevel = t.urgencyOverride as "EMERGENCY" | "HIGH" | "MEDIUM" | "LOW";
+      analysis.riskLevel = t.urgencyOverride as RiskLevelType;
     }
     const decision = getDeterministicDecision(analysis, t.input);
 
@@ -129,8 +129,8 @@ export async function runDecisionEngineTests(): Promise<TestSuiteResults> {
       riskLevel: analysis.riskLevel,
       escalationRequired: decision.escalationRequired,
       escalationTarget: decision.escalationTarget,
-      expectedCategory: t.expectedCategory,
-      expectedRisk: t.expectedRisk,
+      expectedCategory: t.expectedCategory as CategoryType,
+      expectedRisk: t.expectedRisk as RiskLevelType,
       expectedEscalation: t.expectedEscalation,
       expectedTarget: t.expectedTarget,
       errorDetails: errorDetails || undefined
