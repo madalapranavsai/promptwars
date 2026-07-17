@@ -45,7 +45,7 @@ StadiumSense AI utilizes a reliable hybrid full-stack system architecture that s
 
 ### 1. Context Analyzer
 Directly processes incoming descriptions to extract:
-- **Incident Category**: Categorizes issues into `MEDICAL`, `SECURITY`, `LOST_CHILD`, `CROWDING`, `ACCESSIBILITY`, `TRANSPORT`, `SUSTAINABILITY`, `MULTILINGUAL`, or `GENERAL`.
+- **Incident Category**: Categorizes issues into `MEDICAL`, `SECURITY`, `LOST_CHILD`, `CROWDING`, `ACCESSIBILITY`, `NAVIGATION`, `TRANSPORT`, `SUSTAINABILITY`, `MULTILINGUAL`, or `GENERAL`.
 - **Risk Level**: Automatically scores situations as `LOW`, `MEDIUM`, `HIGH`, or `EMERGENCY`.
 - **User Intent**: Recognizes if the reporter is trying to `report`, `ask`, `escalate`, or `translate`.
 - **Missing Information**: Identifies details missing from the description (e.g., specific section, symptoms) and creates a targeted questionnaire.
@@ -112,9 +112,16 @@ Open your browser at `http://localhost:3000`.
 
 StadiumSense AI includes a dedicated, robust diagnostic module to test the deterministic routing of the safety engine.
 
+### Run tests in Web UI:
 1. Navigate to the **Diagnostics** tab in the application.
-2. Click **Re-run Test Suite** to watch the system run high-consequence drills (e.g., unconscious spectators, crowding surges, lost child recovery).
-3. The diagnostics terminal will output real-time validation checks showing how safety gates are mathematically guaranteed to operate correctly.
+2. Click **Re-run Test Suite** to watch the system run high-consequence drills (e.g., unconscious spectators, crowding surges, lost child recovery, accessibility blocks, wayfinding, transit connection, urgency overrides, and fallback validation).
+3. The diagnostics log will render dynamically in the UI showing exactly which assertions pass.
+
+### Run tests via CLI:
+Alternatively, you can run the diagnostics directly from the command line in the project root:
+```bash
+npm test
+```
 
 ---
 
