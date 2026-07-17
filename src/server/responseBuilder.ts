@@ -95,6 +95,14 @@ const translationDictionary: Record<string, { languageName: string } & Omit<Loca
   }
 };
 
+interface CacheEntry {
+  response: FinalResponse;
+  expiresAt: number;
+}
+
+const responseCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 60 * 1000; // 1 minute in-memory cache
+
 export async function buildFullResponse(
   userText: string,
   userMetadata?: {
@@ -102,8 +110,28 @@ export async function buildFullResponse(
     zone?: string;
     urgencyOverride?: string;
     targetLanguage?: string;
+    bypassCache?: boolean;
   }
 ): Promise<FinalResponse> {
+  const cacheKey = JSON.stringify({
+    text: userText.trim(),
+    role: userMetadata?.role || "",
+    zone: userMetadata?.zone || "",
+    urgencyOverride: userMetadata?.urgencyOverride || "auto",
+    targetLanguage: userMetadata?.targetLanguage || "auto"
+  });
+
+  const now = Date.now();
+  if (!userMetadata?.bypassCache) {
+    const cached = responseCache.get(cacheKey);
+    if (cached && cached.expiresAt > now) {
+      return {
+        ...cached.response,
+        timestamp: new Date().toISOString()
+      };
+    }
+  }
+
   // 1. Analyze context using rule-based keyword system
   const analysis = analyzeContext(userText);
 
@@ -147,11 +175,18 @@ export async function buildFullResponse(
     };
   }
 
-  return {
+  const result: FinalResponse = {
     analysis,
     decision,
     aiOutput,
     localizedScripts,
     timestamp: new Date().toISOString()
   };
+
+  responseCache.set(cacheKey, {
+    response: result,
+    expiresAt: Date.now() + CACHE_TTL_MS
+  });
+
+  return result;
 }

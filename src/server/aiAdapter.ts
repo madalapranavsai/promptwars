@@ -7,6 +7,7 @@ export interface AIResult {
   script: string;
   nextSteps: string[];
   reasoning: string;
+  followUpQuestion: string;
 }
 
 let aiInstance: GoogleGenAI | null = null;
@@ -85,9 +86,13 @@ Keep the recommendation action-oriented, the spoken volunteer script highly empa
               reasoning: {
                 type: Type.STRING,
                 description: "Brief professional justification for the recommended approach."
+              },
+              followUpQuestion: {
+                type: Type.STRING,
+                description: "A natural follow-up question to ask the user/reporter if there are missing details, or empty string if no details are missing."
               }
             },
-            required: ["recommendation", "script", "nextSteps", "reasoning"]
+            required: ["recommendation", "script", "nextSteps", "reasoning", "followUpQuestion"]
           }
         }
       });
@@ -112,6 +117,26 @@ function getLocalFallbackResponse(
 ): AIResult {
   const category = analysis.category;
   
+  let followUpQuestion = "";
+  if (analysis.missingDetails && analysis.missingDetails.length > 0) {
+    const detail = analysis.missingDetails[0];
+    if (detail.toLowerCase().includes("location")) {
+      followUpQuestion = "Could you please specify your exact location inside the stadium (such as Sector, Row, Seat, or nearest Gate)?";
+    } else if (detail.toLowerCase().includes("conscious") || detail.toLowerCase().includes("breathing")) {
+      followUpQuestion = "Can you confirm if the spectator is currently conscious and breathing normally?";
+    } else if (detail.toLowerCase().includes("injury") || detail.toLowerCase().includes("symptoms")) {
+      followUpQuestion = "Could you describe the nature of the injury or any specific symptoms they are showing?";
+    } else if (detail.toLowerCase().includes("name")) {
+      followUpQuestion = "What is the child's name and approximate age?";
+    } else if (detail.toLowerCase().includes("wearing") || detail.toLowerCase().includes("description")) {
+      followUpQuestion = "Could you describe what they are wearing or provide any physical descriptions?";
+    } else if (detail.toLowerCase().includes("destination")) {
+      followUpQuestion = "What is your final destination or transit method (e.g. Rideshare, Metro, Express Bus, or Parking Lot)?";
+    } else {
+      followUpQuestion = `Could you provide more details about: ${detail}?`;
+    }
+  }
+
   let recommendation = `Ensure immediate contact with ${decision.escalationTarget} and follow the ${decision.recommendedActionPath}.`;
   let script = "Hello, my name is a Stadium Volunteer. I have logged your situation and our team is already responding. Please remain calm.";
   let nextSteps = [...decision.deterministicSteps];
@@ -194,6 +219,20 @@ function getLocalFallbackResponse(
       reasoning = "Sustainability fallback. Encourages correct waste stream segregation to support stadium zero-waste goals.";
       break;
 
+    case "NAVIGATION":
+      recommendation = "Provide clear physical directions to the target sector or stadium facility.";
+      script = "Hello! I can certainly help you find your way. That sector is just down this concourse. Keep walking past the concessions and you will see the entry tunnel marked on your right. Let me show you on this map.";
+      nextSteps = [...decision.deterministicSteps];
+      reasoning = "Standard navigation guidance fallback. Uses visual maps and clear physical signposting.";
+      break;
+
+    case "TRANSPORT":
+      recommendation = "Direct the guest to the designated stadium transport hub or rideshare zones.";
+      script = "Hello! The stadium express shuttle buses and transit stations are departing from the main transit hub outside Gate E. If you follow the main walkway outside, you will see signs for the Transport Hub.";
+      nextSteps = [...decision.deterministicSteps];
+      reasoning = "Transit directions fallback. Prioritizes official transport routes and guest safety in high-traffic vehicle zones.";
+      break;
+
     case "MULTILINGUAL":
       recommendation = "Connect with bilingual ambassador and guide spectator using visual indicators.";
       script = "Hello, let me connect us with our translation service so we can communicate easily. Please look at this map, we are right here.";
@@ -210,6 +249,7 @@ function getLocalFallbackResponse(
     recommendation,
     script,
     nextSteps,
-    reasoning
+    reasoning,
+    followUpQuestion
   };
 }

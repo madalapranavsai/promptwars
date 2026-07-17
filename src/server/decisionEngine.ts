@@ -127,6 +127,28 @@ export function getDeterministicDecision(
       deterministicSteps.push("Advise guests on correct placement of reusable stadium cups and plastic bottle recyclables.");
       break;
 
+    case "NAVIGATION":
+      escalationTarget = "Wayfinding Volunteer Coordinator";
+      recommendedActionPath = "Standard Wayfinding Assistance & Digital Map Sharing";
+
+      safetyWarnings.push("Do not send guests through restricted team/media tunnels or exit-only emergency doors.");
+
+      deterministicSteps.push("Identify the spectator's target location (Sector, Gate, Suite, or Concessions).");
+      deterministicSteps.push("Point the guest in the correct physical direction and provide a digital map scan QR code.");
+      deterministicSteps.push("If the guest has a mobility request, check accessibility pathways and redirect as needed.");
+      break;
+
+    case "TRANSPORT":
+      escalationTarget = "Transport & Traffic Operations Center (TOC)";
+      recommendedActionPath = "Transit Dispatch & Park-and-Ride Shuttle Routing";
+
+      safetyWarnings.push("Remind guests to remain on designated walkways and avoid walking onto active vehicle roadways.");
+
+      deterministicSteps.push("Confirm destination (e.g. Park-and-Ride, Metro Station, rideshare lot, or Airport).");
+      deterministicSteps.push("Provide schedule info for the stadium express buses and nearest Metro departure gates.");
+      deterministicSteps.push("Direct the guest to the safe, illuminated transport boarding corridors outside the gates.");
+      break;
+
     case "MULTILINGUAL":
       escalationTarget = "Volunteer Language Services Hub";
       recommendedActionPath = "Bilingual Ambassador Dispatch & Digital Language Service Connection";

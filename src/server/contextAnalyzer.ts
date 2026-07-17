@@ -1,5 +1,5 @@
 export interface ContextAnalysis {
-  category: "MEDICAL" | "SECURITY" | "ACCESSIBILITY" | "LOST_CHILD" | "LOST_ITEM" | "CROWDING" | "SUSTAINABILITY" | "MULTILINGUAL" | "GENERAL";
+  category: "MEDICAL" | "SECURITY" | "ACCESSIBILITY" | "LOST_CHILD" | "LOST_ITEM" | "CROWDING" | "SUSTAINABILITY" | "MULTILINGUAL" | "TRANSPORT" | "NAVIGATION" | "GENERAL";
   riskLevel: "EMERGENCY" | "HIGH" | "MEDIUM" | "LOW";
   intent: "REPORT" | "REQUEST_HELP" | "ASK";
   detectedLanguage: "en" | "es" | "fr" | "de" | "pt" | "ja" | "zh" | "ko" | "ar";
@@ -59,7 +59,7 @@ export function analyzeContext(text: string): ContextAnalysis {
     "backpack", "phone missing", "wallet missing", "lost bag", "perdu", "verloren", "perdido", "مفقود"
   ];
   const keywordsCrowding = [
-    "bottleneck", "crush", "crowd", "block", "exit", "gate", "queue", "flow", "packed", "stadium entry", 
+    "bottleneck", "crush", "crowd", "packed", "stadium entry", 
     "stairwell", "congestion", "overcrowded", "pushing", "cannot move", "stuck"
   ];
   const keywordsSustainability = [
@@ -69,6 +69,16 @@ export function analyzeContext(text: string): ContextAnalysis {
   const keywordsMultilingual = [
     "no english", "translate", "language", "translator", "speak english", "spanish", "french", "german", 
     "portuguese", "japanese", "chinese", "korean", "arabic", "communication barrier"
+  ];
+  const keywordsNavigation = [
+    "navigation", "where is gate", "how do i get to", "find my seat", "direction to", 
+    "where is sector", "where is seat", "how to reach", "locate gate", "stadium entrance", 
+    "exit route", "where is restroom", "where is bathroom", "toilet location", "find restroom"
+  ];
+  const keywordsTransport = [
+    "transport", "shuttle", "parking", "bus", "metro", "train", "taxi", "uber", 
+    "lyft", "transit", "subway", "ride share", "rideshare", "station", "car park", 
+    "airport shuttle"
   ];
 
   if (keywordsMedical.some(kw => normalized.includes(kw))) {
@@ -85,6 +95,10 @@ export function analyzeContext(text: string): ContextAnalysis {
     category = "LOST_ITEM";
   } else if (keywordsSustainability.some(kw => normalized.includes(kw))) {
     category = "SUSTAINABILITY";
+  } else if (keywordsTransport.some(kw => normalized.includes(kw))) {
+    category = "TRANSPORT";
+  } else if (keywordsNavigation.some(kw => normalized.includes(kw))) {
+    category = "NAVIGATION";
   } else if (keywordsMultilingual.some(kw => normalized.includes(kw)) || detectedLanguage !== "en") {
     category = "MULTILINGUAL";
   }
@@ -100,7 +114,8 @@ export function analyzeContext(text: string): ContextAnalysis {
   // High Risk Keywords (Injured but conscious, minor fight, unattended bag in crowds, elevator broken)
   const highKeywords = [
     "stolen", "fight", "injury", "injured", "pain", "allergic", "cannot breathe", "separated", 
-    "wheelchair blocked", "unattended bag", "exit blocked", "pushing", "overcrowded", "stuck in elevator"
+    "wheelchair blocked", "wheelchair stuck", "ramp blocked", "ramp is blocked", "elevator broken",
+    "unattended bag", "exit blocked", "pushing", "overcrowded", "stuck in elevator"
   ];
   // Medium Risk Keywords (Lost items, full bins, minor navigation, languages)
   const mediumKeywords = [
@@ -192,6 +207,20 @@ export function analyzeContext(text: string): ContextAnalysis {
   } else if (category === "ACCESSIBILITY") {
     if (!/\b(assistance|cart|chair|ramp|help)\b/i.test(normalized)) {
       missingDetails.push("Specific type of mobility/accessibility assistance required");
+    }
+  } else if (category === "NAVIGATION") {
+    if (!hasLocation) {
+      missingDetails.push("Exact destination you are trying to reach (e.g. gate number, sector number, specific facility like first aid or restroom)");
+    }
+    if (!/\b(elevator|wheelchair|ramp|stairs|walk|accessible)\b/i.test(normalized)) {
+      missingDetails.push("Are you looking for an elevator/accessible route or standard walking route?");
+    }
+  } else if (category === "TRANSPORT") {
+    if (!hasLocation) {
+      missingDetails.push("Nearest gate or exit you are currently at");
+    }
+    if (!/\b(parking|metro|bus|taxi|uber|shuttle|station)\b/i.test(normalized)) {
+      missingDetails.push("Destination details (e.g. specific parking lot, rideshare area, metro transit, airport shuttle)");
     }
   }
 

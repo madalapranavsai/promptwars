@@ -26,7 +26,7 @@ import { motion, AnimatePresence } from "motion/react";
 
 // Types corresponding to server responses
 interface ContextAnalysis {
-  category: "MEDICAL" | "SECURITY" | "ACCESSIBILITY" | "LOST_CHILD" | "LOST_ITEM" | "CROWDING" | "SUSTAINABILITY" | "MULTILINGUAL" | "GENERAL";
+  category: "MEDICAL" | "SECURITY" | "ACCESSIBILITY" | "LOST_CHILD" | "LOST_ITEM" | "CROWDING" | "SUSTAINABILITY" | "MULTILINGUAL" | "TRANSPORT" | "NAVIGATION" | "GENERAL";
   riskLevel: "EMERGENCY" | "HIGH" | "MEDIUM" | "LOW";
   intent: "REPORT" | "REQUEST_HELP" | "ASK";
   detectedLanguage: "en" | "es" | "fr" | "de" | "pt" | "ja" | "zh" | "ko" | "ar";
@@ -47,6 +47,7 @@ interface AIResult {
   script: string;
   nextSteps: string[];
   reasoning: string;
+  followUpQuestion: string;
 }
 
 interface LocalizedScript {
@@ -109,6 +110,18 @@ const SCENARIO_PRESETS = [
     label: "Language Barrier",
     color: "bg-purple-950/30 text-purple-400 border-purple-900/40 hover:bg-purple-950/60",
     text: "A Japanese supporter at Info Desk 4 does not speak English or Spanish. They are distressed, trying to find their family group but cannot explain their seating sector."
+  },
+  {
+    id: "navigation",
+    label: "Wayfinding",
+    color: "bg-sky-950/30 text-sky-400 border-sky-900/40 hover:bg-sky-950/60",
+    text: "How do I get from Sector 118 to Gate D? Is there a shortcut past the food court?"
+  },
+  {
+    id: "transport",
+    label: "Transit Connection",
+    color: "bg-indigo-950/30 text-indigo-400 border-indigo-900/40 hover:bg-indigo-950/60",
+    text: "Where is the nearest shuttle bus station for the park-and-ride lot? And does the subway run past midnight?"
   }
 ];
 
@@ -271,6 +284,8 @@ export default function App() {
       lost_item: "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200/80",
       sustainability: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/80",
       multilingual: "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100/80",
+      navigation: "bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100/80",
+      transport: "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100/80",
     };
     return lightMap[id] || "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200";
   };
@@ -759,6 +774,21 @@ export default function App() {
                       }`}>
                         {response.aiOutput.recommendation}
                       </p>
+                      {response.aiOutput.followUpQuestion && (
+                        <div className={`mt-3 p-3 rounded border border-dashed transition-all duration-200 ${
+                          theme === "dark"
+                            ? "bg-amber-955/10 border-amber-900/40 text-amber-300"
+                            : "bg-amber-50/70 border-amber-200 text-amber-900"
+                        }`}>
+                          <p className="text-[10px] uppercase font-bold tracking-wider flex items-center gap-1.5">
+                            <HelpCircle className="w-3.5 h-3.5 shrink-0" />
+                            <span>AI Follow-Up Clarification:</span>
+                          </p>
+                          <p className="text-xs italic mt-1 font-medium leading-relaxed">
+                            &ldquo;{response.aiOutput.followUpQuestion}&rdquo;
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     {/* 3. Volunteer localized scripts card (with TTS and clipboard copy) */}
@@ -831,7 +861,8 @@ export default function App() {
                                   `${script.greeting} ${script.reassurance} ${script.locationPrompt} ${script.actionDirective} ${script.closing}`, 
                                   langCode
                                 )}
-                                title="Play Audio Text-to-Speech"
+                                title="Speak Script"
+                                aria-label={`Speak script in ${script.languageName}`}
                                 className={`p-1.5 rounded transition-all cursor-pointer border ${
                                   theme === "dark"
                                     ? "bg-gray-800 hover:bg-gray-700 text-gray-300 border-gray-700/80"
@@ -846,6 +877,7 @@ export default function App() {
                                   `${script.languageName} script`
                                 )}
                                 title="Copy Script to Clipboard"
+                                aria-label={`Copy script in ${script.languageName} to clipboard`}
                                 className={`p-1.5 rounded transition-all cursor-pointer border ${
                                   theme === "dark"
                                     ? "bg-gray-800 hover:bg-gray-700 text-gray-300 border-gray-700/80"
@@ -909,15 +941,7 @@ export default function App() {
                         {response.aiOutput.nextSteps.map((step, idx) => (
                           <div 
                             key={idx}
-                            onClick={() => {
-                              const key = `step-${idx}`;
-                              setCheckedSteps(prev => {
-                                const newVal = !prev[key];
-                                setAnnouncement(`Step ${idx + 1} marked as ${newVal ? 'completed' : 'incomplete'}`);
-                                return { ...prev, [key]: newVal };
-                              });
-                            }}
-                            className={`flex items-start space-x-3 p-3 border rounded cursor-pointer transition-all duration-200 ${
+                            className={`flex items-start space-x-3 p-3 border rounded transition-all duration-200 ${
                               checkedSteps[`step-${idx}`] 
                                 ? theme === "dark"
                                   ? "bg-emerald-950/20 border-emerald-900/40 text-gray-500 line-through" 
@@ -930,16 +954,27 @@ export default function App() {
                             <div className="shrink-0 mt-0.5">
                               <input
                                 type="checkbox"
+                                id={`step-check-${idx}`}
                                 checked={!!checkedSteps[`step-${idx}`]}
-                                onChange={() => {}} // handled by div click
-                                className={`rounded-sm text-blue-600 focus:ring-blue-500 h-4 w-4 border-gray-750 ${
+                                onChange={() => {
+                                  const key = `step-${idx}`;
+                                  setCheckedSteps(prev => {
+                                    const newVal = !prev[key];
+                                    setAnnouncement(`Step ${idx + 1} marked as ${newVal ? 'completed' : 'incomplete'}`);
+                                    return { ...prev, [key]: newVal };
+                                  });
+                                }}
+                                className={`rounded-sm text-blue-600 focus:ring-blue-500 h-4 w-4 border-gray-750 cursor-pointer ${
                                   theme === "dark" ? "bg-[#05070a]" : "bg-white"
                                 }`}
                               />
                             </div>
-                            <span className="text-xs leading-relaxed font-medium">
+                            <label
+                              htmlFor={`step-check-${idx}`}
+                              className="text-xs leading-relaxed font-medium cursor-pointer flex-1"
+                            >
                               <span className={`font-mono font-bold mr-1 ${checkedSteps[`step-${idx}`] ? "text-emerald-500" : "text-blue-500"}`}>{idx + 1}.</span> {step}
-                            </span>
+                            </label>
                           </div>
                         ))}
                       </div>
@@ -966,15 +1001,7 @@ export default function App() {
                           {response.analysis.missingDetails.map((detail, idx) => (
                             <div 
                               key={idx}
-                              onClick={() => {
-                                const key = `detail-${idx}`;
-                                setCheckedDetails(prev => {
-                                  const newVal = !prev[key];
-                                  setAnnouncement(`Context question ${idx + 1} completed.`);
-                                  return { ...prev, [key]: newVal };
-                                });
-                              }}
-                              className={`flex items-start space-x-2.5 p-2.5 border border-dashed rounded cursor-pointer transition-all duration-200 ${
+                              className={`flex items-start space-x-2.5 p-2.5 border border-dashed rounded transition-all duration-200 ${
                                 checkedDetails[`detail-${idx}`]
                                   ? theme === "dark"
                                     ? "bg-gray-950/60 border-gray-800 text-gray-500 line-through"
@@ -984,17 +1011,30 @@ export default function App() {
                                     : "bg-orange-50/50 border-orange-200 text-orange-800 hover:border-orange-300 hover:bg-orange-100/40"
                               }`}
                             >
-                              <input
-                                type="checkbox"
-                                checked={!!checkedDetails[`detail-${idx}`]}
-                                onChange={() => {}} // handled by click
-                                className={`rounded-sm text-orange-550 focus:ring-orange-500 h-3.5 w-3.5 mt-0.5 ${
-                                  theme === "dark" ? "border-gray-700 bg-gray-950" : "border-slate-300 bg-white"
-                                }`}
-                              />
-                              <span className="text-xs leading-relaxed font-medium">
+                              <div className="shrink-0 mt-0.5">
+                                <input
+                                  type="checkbox"
+                                  id={`detail-check-${idx}`}
+                                  checked={!!checkedDetails[`detail-${idx}`]}
+                                  onChange={() => {
+                                    const key = `detail-${idx}`;
+                                    setCheckedDetails(prev => {
+                                      const newVal = !prev[key];
+                                      setAnnouncement(`Context question ${idx + 1} marked as ${newVal ? 'completed' : 'incomplete'}.`);
+                                      return { ...prev, [key]: newVal };
+                                    });
+                                  }}
+                                  className={`rounded-sm text-orange-550 focus:ring-orange-500 h-3.5 w-3.5 cursor-pointer ${
+                                    theme === "dark" ? "border-gray-700 bg-gray-950" : "border-slate-300 bg-white"
+                                  }`}
+                                />
+                              </div>
+                              <label
+                                htmlFor={`detail-check-${idx}`}
+                                className="text-xs leading-relaxed font-medium cursor-pointer flex-1"
+                              >
                                 {detail}
-                              </span>
+                              </label>
                             </div>
                           ))}
                         </div>
@@ -1145,30 +1185,48 @@ export default function App() {
               <div className="space-y-4">
                 <div className={`font-mono text-xs rounded-lg p-4 shadow-inner space-y-2 border transition-all duration-200 ${
                   theme === "dark"
-                    ? "bg-[#05070a] text-emerald-400 border-gray-800"
-                    : "bg-slate-50 text-emerald-700 border-slate-200"
+                    ? "bg-[#05070a] text-gray-300 border-gray-800"
+                    : "bg-slate-50 text-slate-700 border-slate-200"
                 }`}>
                   <p className={`font-semibold border-b pb-2 flex items-center justify-between transition-all duration-200 ${
                     theme === "dark" ? "text-gray-500 border-gray-800" : "text-slate-500 border-slate-200"
                   }`}>
                     <span>STADIUMSENSE AI COGNITIVE TEST SUITE</span>
                     <span className={`px-2.5 py-0.5 rounded text-[10px] border transition-all duration-200 ${
-                      theme === "dark"
-                        ? "bg-emerald-950/50 text-emerald-300 border-emerald-900/40"
-                        : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                      testSuiteResults.passed === testSuiteResults.total
+                        ? theme === "dark"
+                          ? "bg-emerald-950/50 text-emerald-350 border-emerald-900/40"
+                          : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        : theme === "dark"
+                          ? "bg-red-950/50 text-red-300 border-red-900/40"
+                          : "bg-red-50 text-red-800 border-red-200"
                     }`}>
-                      SUCCESS ({testSuiteResults.results?.passed} / {testSuiteResults.results?.total} Passed)
+                      {testSuiteResults.passed === testSuiteResults.total ? "SUCCESS" : "FAILURE"} ({testSuiteResults.passed} / {testSuiteResults.total} Passed)
                     </span>
                   </p>
-                  <p className={`transition-colors duration-200 ${theme === "dark" ? "text-gray-400" : "text-slate-600"}`}>Running medical faints, security brawls, lost children and crowding drills...</p>
-                  <p className="text-emerald-500">[PASS] Scenario 1: Medical Emergency - Unconscious spectator fainted in stand</p>
-                  <p className="text-emerald-500">[PASS] Scenario 2: Security Hazard - Active brawl/fight in entry gate concourse</p>
-                  <p className="text-emerald-500">[PASS] Scenario 3: Lost Child Safeguarding - Child unaccompanied near concessions</p>
-                  <p className="text-emerald-500">[PASS] Scenario 4: Crowd Bottleneck - Critical trample risks at turnstile zones</p>
-                  <p className="text-emerald-500">[PASS] Scenario 5: Sustainability Compliance - zero-waste overflowing bins</p>
+                  <p className={`transition-colors duration-200 ${theme === "dark" ? "text-gray-400" : "text-slate-600"}`}>Running operations logic gates, emergency overrides, and translation diagnostics...</p>
+                  <div className="space-y-1.5 py-1">
+                    {testSuiteResults.details?.map((detail: any, idx: number) => (
+                      <p 
+                        key={idx} 
+                        className={detail.passed ? "text-emerald-500" : "text-red-500"}
+                      >
+                        [{detail.passed ? "PASS" : "FAIL"}] {detail.name}
+                        {!detail.passed && (
+                          <span className="block text-[10px] text-red-400 pl-4 font-sans">
+                            Category: expected {detail.expectedCategory}, got {detail.category} | Risk: expected {detail.expectedRisk}, got {detail.riskLevel} | Escalated: expected {String(detail.expectedEscalation)}, got {String(detail.escalationRequired)}
+                          </span>
+                        )}
+                      </p>
+                    ))}
+                  </div>
                   <p className={`pt-2 text-[10px] border-t transition-all duration-200 ${
                     theme === "dark" ? "text-gray-500" : "text-slate-400"
-                  }`}>Deterministic escalation logic gates are perfectly green.</p>
+                  }`}>
+                    {testSuiteResults.passed === testSuiteResults.total 
+                      ? "Deterministic escalation logic gates are perfectly green." 
+                      : "Warning: logic gate configuration failed checks."}
+                  </p>
                 </div>
 
                 <div className={`rounded-xl p-4 flex items-start space-x-3 border transition-all duration-200 ${
@@ -1182,7 +1240,7 @@ export default function App() {
                       theme === "dark" ? "text-emerald-300" : "text-emerald-800"
                     }`}>Perfect Structural Compliance</h3>
                     <p className={`text-xs mt-1 leading-relaxed transition-colors duration-200 ${
-                      theme === "dark" ? "text-emerald-400" : "text-emerald-700"
+                      theme === "dark" ? "text-emerald-400" : "text-emerald-705"
                     }`}>
                       The decision engine diagnostics successfully verified that high-consequence incidents (like active violence, chest pains, crowd surges, and lost children) are mathematically guaranteed to bypass the LLM and instantly activate direct, unprompted priority alerts and correct escalation teams.
                     </p>
