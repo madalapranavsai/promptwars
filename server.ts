@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import dotenv from "dotenv";
+import compression from "compression";
 import { createServer as createViteServer } from "vite";
 import { buildFullResponse } from "./src/server/responseBuilder";
 import { runDecisionEngineTests } from "./src/server/decisionEngine.test";
@@ -14,6 +15,7 @@ async function startServer() {
   const app = express();
 
   // Middleware
+  app.use(compression());
   app.use(express.json());
 
   // API Endpoints
@@ -78,7 +80,10 @@ async function startServer() {
   } else {
     console.log("Starting server in PRODUCTION mode.");
     const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, {
+      maxAge: "1d",
+      etag: true
+    }));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
