@@ -47,7 +47,7 @@ export function SituationForm({
 
       <div>
         <label htmlFor="situation-desc" className={`block text-[10px] uppercase font-bold tracking-widest mb-1.5 transition-colors duration-200 ${
-          theme === "dark" ? "text-gray-500" : "text-slate-500"
+          theme === "dark" ? "text-gray-400" : "text-slate-500"
         }`}>
           Describe the Active Situation: <span className="text-red-500">*</span>
         </label>
@@ -77,7 +77,7 @@ export function SituationForm({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="role-select" className={`block text-[10px] uppercase font-bold tracking-widest mb-1.5 transition-colors duration-200 ${
-            theme === "dark" ? "text-gray-500" : "text-slate-500"
+            theme === "dark" ? "text-gray-400" : "text-slate-500"
           }`}>
             Your Duty Role:
           </label>
@@ -100,7 +100,7 @@ export function SituationForm({
 
         <div>
           <label htmlFor="zone-select" className={`block text-[10px] uppercase font-bold tracking-widest mb-1.5 transition-colors duration-200 ${
-            theme === "dark" ? "text-gray-500" : "text-slate-500"
+            theme === "dark" ? "text-gray-400" : "text-slate-500"
           }`}>
             Active Stadium Zone:
           </label>
@@ -127,7 +127,7 @@ export function SituationForm({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="urgency-select" className={`block text-[10px] uppercase font-bold tracking-widest mb-1.5 transition-colors duration-200 ${
-            theme === "dark" ? "text-gray-500" : "text-slate-500"
+            theme === "dark" ? "text-gray-400" : "text-slate-500"
           }`}>
             Urgency Override:
           </label>
@@ -151,7 +151,7 @@ export function SituationForm({
 
         <div>
           <label htmlFor="lang-select" className={`block text-[10px] uppercase font-bold tracking-widest mb-1.5 transition-colors duration-200 ${
-            theme === "dark" ? "text-gray-500" : "text-slate-500"
+            theme === "dark" ? "text-gray-400" : "text-slate-500"
           }`}>
             Target Language Support:
           </label>

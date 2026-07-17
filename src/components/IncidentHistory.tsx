@@ -74,7 +74,7 @@ export function IncidentHistory({ theme, incidents }: IncidentHistoryProps) {
                     </span>
                   </div>
                   <span className={`text-[9px] font-mono flex items-center gap-1 transition-colors duration-200 ${
-                    theme === "dark" ? "text-gray-500" : "text-slate-400"
+                    theme === "dark" ? "text-gray-400" : "text-slate-400"
                   }`}>
                     <Calendar className="w-2.5 h-2.5" />
                     <span>{timeStr}</span>
@@ -86,7 +86,7 @@ export function IncidentHistory({ theme, incidents }: IncidentHistoryProps) {
                   {inc.situation}
                 </p>
                 <p className={`text-[10px] italic mt-1 line-clamp-1 border-t pt-1 border-gray-800/40 transition-colors duration-200 ${
-                  theme === "dark" ? "text-gray-500" : "text-slate-450"
+                  theme === "dark" ? "text-gray-400" : "text-slate-450"
                 }`}>
                   AI: {inc.recommendation}
                 </p>

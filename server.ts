@@ -25,7 +25,7 @@ export async function createExpressApp() {
   // Rate Limiting for API calls to prevent abuse
   const apiLimiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute
-    max: 100, // Capped high for testing environment runs, but secure for standard usage
+    max: 10, // Capped to 10 req/min per IP as per Security recommendations
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: "Too many requests from this IP, please try again after 1 minute." }
@@ -59,11 +59,12 @@ export async function createExpressApp() {
       }, bypassAI);
 
       return res.json(responseData);
-    } catch (error: any) {
-      console.error("Analysis route error:", error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error("Analysis route error:", err);
       return res.status(500).json({
         error: "Internal server error during context and decision orchestration.",
-        details: error.message
+        details: err.message
       });
     }
   });
@@ -75,10 +76,11 @@ export async function createExpressApp() {
         success: true,
         results
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       return res.status(500).json({
         success: false,
-        error: error.message
+        error: err.message
       });
     }
   });

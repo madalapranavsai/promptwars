@@ -75,7 +75,7 @@ export function DiagnosticsSuite({
               : "bg-slate-50 text-slate-700 border-slate-200"
           }`}>
             <p className={`font-semibold border-b pb-2 flex items-center justify-between transition-all duration-200 ${
-              theme === "dark" ? "text-gray-500 border-gray-800" : "text-slate-500 border-slate-200"
+              theme === "dark" ? "text-gray-400 border-gray-800" : "text-slate-500 border-slate-200"
             }`}>
               <span>STADIUMSENSE AI COGNITIVE TEST SUITE</span>
               <span className={`px-2.5 py-0.5 rounded text-[10px] border transition-all duration-200 ${
@@ -107,7 +107,7 @@ export function DiagnosticsSuite({
               ))}
             </div>
             <p className={`pt-2 text-[10px] border-t transition-all duration-200 ${
-              theme === "dark" ? "text-gray-500" : "text-slate-400"
+              theme === "dark" ? "text-gray-400" : "text-slate-400"
             }`}>
               {testSuiteResults.passed === testSuiteResults.total 
                 ? "Deterministic escalation logic gates are perfectly green." 

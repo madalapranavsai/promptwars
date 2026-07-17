@@ -105,7 +105,7 @@ Keep the recommendation action-oriented, the spoken volunteer script highly empa
 function getLocalFallbackResponse(
   analysis: ContextAnalysis,
   decision: DecisionResult,
-  userText: string
+  _userText: string
 ): AIResult {
   const category = analysis.category;
   

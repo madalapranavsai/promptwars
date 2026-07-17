@@ -1,50 +1,9 @@
 import React from "react";
 import { 
   ShieldAlert, Activity, AlertTriangle, Info, Globe, 
-  HelpCircle, Volume2, Clipboard, CheckSquare, CheckCircle2 
+  HelpCircle, Volume2, Clipboard, CheckSquare 
 } from "lucide-react";
-
-interface ContextAnalysis {
-  category: string;
-  riskLevel: string;
-  intent: string;
-  detectedLanguage: string;
-  missingDetails: string[];
-}
-
-interface DecisionResult {
-  escalationRequired: boolean;
-  escalationTarget: string;
-  recommendedActionPath: string;
-  deterministicSteps: string[];
-  safetyWarnings: string[];
-  operationalReasoning: string;
-}
-
-interface AIResult {
-  recommendation: string;
-  script: string;
-  nextSteps: string[];
-  reasoning: string;
-  followUpQuestion: string;
-}
-
-interface LocalizedScript {
-  languageName: string;
-  greeting: string;
-  reassurance: string;
-  locationPrompt: string;
-  actionDirective: string;
-  closing: string;
-}
-
-interface FinalResponse {
-  analysis: ContextAnalysis;
-  decision: DecisionResult;
-  aiOutput: AIResult;
-  localizedScripts: Record<string, LocalizedScript>;
-  timestamp: string;
-}
+import { FinalResponse, LocalizedScript } from "../shared/types";
 
 interface GuidancePanelProps {
   theme: "light" | "dark";
@@ -69,23 +28,6 @@ export function GuidancePanel({
   copyToClipboard,
   speakText
 }: GuidancePanelProps) {
-  const getCategoryColor = (cat: string) => {
-    const map: Record<string, string> = {
-      MEDICAL: "bg-red-500/10 text-red-400 border-red-900/30",
-      SECURITY: "bg-red-500/10 text-red-400 border-red-900/30",
-      LOST_CHILD: "bg-amber-500/10 text-amber-400 border-amber-900/30",
-      CROWDING: "bg-orange-500/10 text-orange-400 border-orange-900/30",
-      ACCESSIBILITY: "bg-blue-500/10 text-blue-400 border-blue-900/30",
-      NAVIGATION: "bg-sky-500/10 text-sky-400 border-sky-900/30",
-      TRANSPORT: "bg-indigo-500/10 text-indigo-400 border-indigo-900/30",
-      SUSTAINABILITY: "bg-emerald-500/10 text-emerald-400 border-emerald-900/30",
-      LOST_ITEM: "bg-gray-500/10 text-gray-400 border-gray-800/30",
-      MULTILINGUAL: "bg-purple-500/10 text-purple-400 border-purple-900/30",
-      GENERAL: "bg-gray-500/10 text-gray-450 border-gray-800/30",
-    };
-    return map[cat] || "bg-gray-500/10 text-gray-400 border-gray-800/30";
-  };
-
   const getRiskColor = (risk: string) => {
     const map: Record<string, string> = {
       EMERGENCY: "bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.45)]",
@@ -111,7 +53,7 @@ export function GuidancePanel({
               <span>Safety & Escalation Directive</span>
             </h2>
             <p className={`text-[10px] font-mono mt-1 transition-colors duration-200 ${
-              theme === "dark" ? "text-gray-500" : "text-slate-450"
+              theme === "dark" ? "text-gray-400" : "text-slate-450"
             }`}>COGNITIVE DECISION ENGINE DISPATCH REPORT</p>
           </div>
           <div className="flex items-center space-x-2.5">
@@ -133,7 +75,7 @@ export function GuidancePanel({
             theme === "dark" ? "bg-[#05070a] border-gray-800/80" : "bg-slate-50 border-slate-200"
           }`}>
             <span className={`block text-[9px] font-semibold uppercase tracking-widest transition-colors duration-200 ${
-              theme === "dark" ? "text-gray-500" : "text-slate-450"
+              theme === "dark" ? "text-gray-400" : "text-slate-450"
             }`}>Escalation Dispatch Target</span>
             <span className={`text-xs font-bold mt-1 block transition-colors duration-200 ${
               theme === "dark" ? "text-red-450" : "text-red-750"
@@ -144,7 +86,7 @@ export function GuidancePanel({
             theme === "dark" ? "bg-[#05070a] border-gray-800/80" : "bg-slate-50 border-slate-200"
           }`}>
             <span className={`block text-[9px] font-semibold uppercase tracking-widest transition-colors duration-200 ${
-              theme === "dark" ? "text-gray-500" : "text-slate-450"
+              theme === "dark" ? "text-gray-400" : "text-slate-450"
             }`}>Active Operations Pathway</span>
             <span className={`text-xs font-bold mt-1 block transition-colors duration-200 ${
               theme === "dark" ? "text-white" : "text-slate-800"
@@ -217,7 +159,7 @@ export function GuidancePanel({
             <span>Localized Bilingual Fan Scripts</span>
           </h3>
           <span className={`text-[10px] transition-colors duration-200 ${
-            theme === "dark" ? "text-gray-500" : "text-slate-500"
+            theme === "dark" ? "text-gray-400" : "text-slate-500"
           }`}>
             Detected spectator language: <strong className="uppercase font-bold text-blue-500">{response.analysis.detectedLanguage}</strong>
           </span>
@@ -344,7 +286,7 @@ export function GuidancePanel({
           <span>Interactive Tactical Checklist</span>
         </h3>
         <p className={`text-xs transition-colors duration-200 ${
-          theme === "dark" ? "text-gray-500" : "text-slate-500"
+          theme === "dark" ? "text-gray-400" : "text-slate-500"
         }`}>
           Volunteers should tick off each action step as they execute the guidelines below:
         </p>
@@ -356,7 +298,7 @@ export function GuidancePanel({
               className={`flex items-start space-x-3 p-3 border rounded transition-all duration-200 ${
                 checkedSteps[`step-${idx}`] 
                   ? theme === "dark"
-                    ? "bg-emerald-950/20 border-emerald-900/40 text-gray-500 line-through" 
+                    ? "bg-emerald-950/20 border-emerald-900/40 text-gray-400 line-through" 
                     : "bg-emerald-50/70 border-emerald-200 text-slate-400 line-through"
                   : theme === "dark"
                     ? "bg-gray-900/40 border-gray-800 hover:border-gray-700 hover:bg-gray-900/60 text-gray-300"
@@ -404,7 +346,7 @@ export function GuidancePanel({
             <span>Missing Details Questionnaire</span>
           </h3>
           <p className={`text-xs transition-colors duration-200 ${
-            theme === "dark" ? "text-gray-500" : "text-slate-500"
+            theme === "dark" ? "text-gray-400" : "text-slate-500"
           }`}>
             Ask the reporter or spectator the following questions to gather missing critical context:
           </p>
@@ -416,7 +358,7 @@ export function GuidancePanel({
                 className={`flex items-start space-x-2.5 p-2.5 border border-dashed rounded transition-all duration-200 ${
                   checkedDetails[`detail-${idx}`]
                     ? theme === "dark"
-                      ? "bg-gray-955/60 border-gray-800 text-gray-500 line-through"
+                      ? "bg-gray-955/60 border-gray-800 text-gray-400 line-through"
                       : "bg-slate-100 border-slate-200 text-slate-400 line-through"
                     : theme === "dark"
                       ? "bg-orange-500/5 border-orange-500/20 text-orange-300 hover:border-orange-500/40 hover:bg-orange-500/10"

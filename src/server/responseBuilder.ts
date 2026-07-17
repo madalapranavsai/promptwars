@@ -3,8 +3,6 @@ import { getDeterministicDecision } from "./decisionEngine";
 import { generateAIResponse } from "./aiAdapter";
 import { 
   ContextAnalysis, 
-  DecisionResult, 
-  AIResult, 
   LocalizedScript, 
   FinalResponse, 
   IncidentRecord 

@@ -10,7 +10,7 @@ describe("StadiumSense AI Safety Logic", () => {
     for (const t of TEST_CASES) {
       const analysis = analyzeContext(t.input);
       if (t.urgencyOverride) {
-        analysis.riskLevel = t.urgencyOverride as any;
+        analysis.riskLevel = t.urgencyOverride as "EMERGENCY" | "HIGH" | "MEDIUM" | "LOW";
       }
       const decision = getDeterministicDecision(analysis, t.input);
 

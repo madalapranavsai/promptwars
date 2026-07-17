@@ -32,7 +32,7 @@ export function Header({
               theme === "dark" ? "text-white" : "text-slate-800"
             }`}>StadiumSense AI</h1>
             <p className={`text-[10px] tracking-wide transition-colors duration-200 ${
-              theme === "dark" ? "text-gray-500" : "text-slate-400"
+              theme === "dark" ? "text-gray-400" : "text-slate-400"
             }`}>MATCHDAY COMMAND OPERATIONS COPILOT</p>
           </div>
         </div>

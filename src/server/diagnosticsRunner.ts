@@ -98,7 +98,7 @@ export async function runDecisionEngineTests(): Promise<TestSuiteResults> {
     
     const analysis = analyzeContext(t.input);
     if (t.urgencyOverride) {
-      analysis.riskLevel = t.urgencyOverride as any;
+      analysis.riskLevel = t.urgencyOverride as "EMERGENCY" | "HIGH" | "MEDIUM" | "LOW";
     }
     const decision = getDeterministicDecision(analysis, t.input);
 
@@ -165,9 +165,9 @@ export async function runDecisionEngineTests(): Promise<TestSuiteResults> {
       fallbackPassed = false;
       fallbackError = "Local AI fallback responses are incomplete or empty.";
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     fallbackPassed = false;
-    fallbackError = err.message || "Failed running offline fallback adapter.";
+    fallbackError = (err as Error).message || "Failed running offline fallback adapter.";
   }
 
   if (fallbackPassed) passedCount++;

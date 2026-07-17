@@ -1,163 +1,184 @@
 import { ContextAnalysis, DecisionResult } from "../shared/types";
 
+interface CategoryRule {
+  escalationTarget: string;
+  recommendedActionPath: string | ((risk: string) => string);
+  safetyWarnings?: string[];
+  deterministicSteps: string[];
+}
+
+const CATEGORY_RULES: Record<string, CategoryRule> = {
+  MEDICAL: {
+    escalationTarget: "Venue Medical Response Team (VMRT) & Stadium Command Center",
+    recommendedActionPath: (risk) => risk === "EMERGENCY" 
+      ? "VMRT Emergency Red Code Dispatch & Priority Evacuation Route Activation" 
+      : "VMRT Yellow Code Support Team Deployment",
+    safetyWarnings: [
+      "Do not attempt to move a severely injured person unless there is an immediate secondary hazard (e.g. fire).",
+      "Keep crowds back to maintain fresh air and clear path for the medical stretchers."
+    ],
+    deterministicSteps: [
+      "Secure the exact seat/concourse location and clear a 3-meter radius around the patient.",
+      "Check if the patient is conscious and breathing normally; prepare to guide emergency medics.",
+      "Assign one volunteer to wait at the nearest Sector entry gate to physically guide the VMRT team."
+    ]
+  },
+  SECURITY: {
+    escalationTarget: "Stadium Security Command & Local Law Enforcement Liaison",
+    recommendedActionPath: (risk) => risk === "EMERGENCY"
+      ? "Active Hostility Containment Protocol & Rapid Security Intervention"
+      : "Security Patrol Sector Re-route & Incident Documentation",
+    safetyWarnings: [
+      "NEVER put yourself or other volunteers in physical danger. Stand back and observe.",
+      "Do NOT attempt to physically restrain or engage with aggressive individuals."
+    ],
+    deterministicSteps: [
+      "Observe from a safe distance of at least 5-10 meters.",
+      "Note physical descriptions of key subjects (height, attire, shirt numbers, physical markings).",
+      "Advise nearby spectators to move calmly away from the active containment zone."
+    ]
+  },
+  LOST_CHILD: {
+    escalationTarget: "Venue Operations Center (VOC) & Safeguarding Officer",
+    recommendedActionPath: "Coordinated Multi-Sector Sweep & Perimeter Gate Lockout Alert",
+    safetyWarnings: [
+      "A volunteer must NEVER be left alone with a child. Always ensure at least two volunteers or staff are present.",
+      "Do not broadcast the child's full name over public speakers to ensure child safeguarding."
+    ],
+    deterministicSteps: [
+      "Ensure two registered volunteers remain with the child/parent at all times.",
+      "Obtain full physical description of child: clothing colors, age, height, and name.",
+      "Notify the Safeguarding Officer to alert exit gates and begin a systematic sweep of the Sector."
+    ]
+  },
+  CROWDING: {
+    escalationTarget: "Crowd Management Command & Sector Gate Managers",
+    recommendedActionPath: (risk) => risk === "EMERGENCY"
+      ? "Gate Lockout Holding & Emergency Concave Bypass Route Activation"
+      : "Queue Metering & Concourse Flow Redirection",
+    safetyWarnings: [
+      "Avoid building static blockages. Keep walking paths dynamic and clear.",
+      "Ensure emergency exits are not locked or chained under any circumstances."
+    ],
+    deterministicSteps: [
+      "Immediately open any secondary bypass lanes or exit-only auxiliary gates.",
+      "Use mega-megaphones to direct fans to adjacent, less crowded concourse zones.",
+      "Monitor crowd density at turnstiles and suspend entry briefly if platforms are oversaturated."
+    ]
+  },
+  ACCESSIBILITY: {
+    escalationTarget: "Spectator Services Mobility Team",
+    recommendedActionPath: "Mobility Shuttle/Golf Cart Dispatch & Elevator Bypass Routing",
+    deterministicSteps: [
+      "Assess if the spectator requires a manual wheelchair or a motorized golf cart.",
+      "Accompany the visitor to the nearest designated priority elevator or ramp.",
+      "Coordinate with Spectator Services to confirm accessible seat compatibility."
+    ]
+  },
+  LOST_ITEM: {
+    escalationTarget: "Stadium Lost & Found Registry Office",
+    recommendedActionPath: "Digital Item Entry & Guest Retrieval Ticket Issuance",
+    deterministicSteps: [
+      "Inspect the item visually for security hazards before handling (do not open unattended luggage).",
+      "Record the item description, seat location found, and timestamp into the operational database.",
+      "Direct the guest to the nearest Info Desk or issue a standard Lost & Found claim receipt."
+    ]
+  },
+  SUSTAINABILITY: {
+    escalationTarget: "Venue Facilities & Recycling Zero-Waste Crew",
+    recommendedActionPath: "Janitorial Service Dispatch & Recycling Bin Re-sort Operations",
+    deterministicSteps: [
+      "Assess if there are hazardous waste components involved (spills, glass).",
+      "Mark the sorting bin or trash area for priority pickup by the zero-waste crew.",
+      "Advise guests on correct placement of reusable stadium cups and plastic bottle recyclables."
+    ]
+  },
+  NAVIGATION: {
+    escalationTarget: "Wayfinding Volunteer Coordinator",
+    recommendedActionPath: "Standard Wayfinding Assistance & Digital Map Sharing",
+    safetyWarnings: [
+      "Do not send guests through restricted team/media tunnels or exit-only emergency doors."
+    ],
+    deterministicSteps: [
+      "Identify the spectator's target location (Sector, Gate, Suite, or Concessions).",
+      "Point the guest in the correct physical direction and provide a digital map scan QR code.",
+      "If the guest has a mobility request, check accessibility pathways and redirect as needed."
+    ]
+  },
+  TRANSPORT: {
+    escalationTarget: "Transport & Traffic Operations Center (TOC)",
+    recommendedActionPath: "Transit Dispatch & Park-and-Ride Shuttle Routing",
+    safetyWarnings: [
+      "Remind guests to remain on designated walkways and avoid walking onto active vehicle roadways."
+    ],
+    deterministicSteps: [
+      "Confirm destination (e.g. Park-and-Ride, Metro Station, rideshare lot, or Airport).",
+      "Provide schedule info for the stadium express buses and nearest Metro departure gates.",
+      "Direct the guest to the safe, illuminated transport boarding corridors outside the gates."
+    ]
+  },
+  MULTILINGUAL: {
+    escalationTarget: "Volunteer Language Services Hub",
+    recommendedActionPath: "Bilingual Ambassador Dispatch & Digital Language Service Connection",
+    deterministicSteps: [
+      "Identify the spectator's preferred language (e.g., Spanish, French, German, Arabic).",
+      "Use the preset multilingual translation script or the remote translation hot-channel.",
+      "Guide the fan visually using standard stadium iconography and stadium map panels."
+    ]
+  }
+};
+
 export function getDeterministicDecision(
   analysis: ContextAnalysis,
   userText: string
 ): DecisionResult {
+  const category = analysis.category;
+  const riskLevel = analysis.riskLevel;
   const textLower = userText.toLowerCase();
-  let { category, riskLevel } = analysis;
+
+  let escalationRequired = false;
+  let operationalReasoning = "";
 
   // 1. Risk Level Upgrades & Security/Safety Overrides
-  let operationalReasoning = "";
-  const safetyWarnings: string[] = [];
-  const deterministicSteps: string[] = [];
-
-  if (category === "LOST_CHILD") {
-    riskLevel = "EMERGENCY";
-    operationalReasoning += "Override: Lost child incidents are automatically elevated to EMERGENCY risk level under safeguarding rules. ";
+  if (category === "MEDICAL" && (textLower.includes("unconscious") || textLower.includes("breathing shallow") || textLower.includes("not breathing") || textLower.includes("chest pain") || textLower.includes("fainted"))) {
+    operationalReasoning += "Override: Patient is unconscious or fainted. Enforced EMERGENCY risk level. ";
   }
 
   if (category === "SECURITY" && (textLower.includes("weapon") || textLower.includes("gun") || textLower.includes("knife") || textLower.includes("bomb") || textLower.includes("fire"))) {
-    riskLevel = "EMERGENCY";
-    operationalReasoning += "Override: Active security threat or weapon detected in input. Upgraded to EMERGENCY risk level. ";
+    operationalReasoning += "Override: Active security threat or weapon detected in input. Engraded to EMERGENCY risk level. ";
   }
 
-  if (category === "CROWDING" && (textLower.includes("crush") || textLower.includes("suffocat") || textLower.includes("trample") || textLower.includes("pushing"))) {
-    riskLevel = "EMERGENCY";
-    operationalReasoning += "Override: Crowd density triggers structural crush indicators. Upgraded to EMERGENCY risk level. ";
+  if (category === "CROWDING" && (textLower.includes("crush") || textLower.includes("trample") || textLower.includes("bottleneck"))) {
+    operationalReasoning += "Override: Critical crowd crush or trample risk detected. Escalated to EMERGENCY risk level. ";
   }
 
-  // 2. Coordinated Escalation targets and action paths based on category and risk
-  let escalationRequired = false;
-  let escalationTarget = "Sector Supervisor";
-  let recommendedActionPath = "Standard Operations Protocol";
+  if (category === "LOST_CHILD") {
+    operationalReasoning += "Override: Safeguarding rule enforced. Lost child recovery is treated as an EMERGENCY priority. ";
+  }
 
+  // Escalation criteria
   if (riskLevel === "EMERGENCY" || riskLevel === "HIGH") {
     escalationRequired = true;
   }
 
-  switch (category) {
-    case "MEDICAL":
-      escalationTarget = "Venue Medical Response Team (VMRT) & Stadium Command Center";
-      recommendedActionPath = riskLevel === "EMERGENCY" 
-        ? "VMRT Emergency Red Code Dispatch & Priority Evacuation Route Activation" 
-        : "VMRT Yellow Code Support Team Deployment";
-      
-      safetyWarnings.push("Do not attempt to move a severely injured person unless there is an immediate secondary hazard (e.g. fire).");
-      safetyWarnings.push("Keep crowds back to maintain fresh air and clear path for the medical stretchers.");
-      
-      deterministicSteps.push("Secure the exact seat/concourse location and clear a 3-meter radius around the patient.");
-      deterministicSteps.push("Check if the patient is conscious and breathing normally; prepare to guide emergency medics.");
-      deterministicSteps.push("Assign one volunteer to wait at the nearest Sector entry gate to physically guide the VMRT team.");
-      break;
+  // 2. Fetch deterministic mappings from config lookup
+  const rule = CATEGORY_RULES[category] || {
+    escalationTarget: "Sector Supervisor",
+    recommendedActionPath: "Standard Volunteer Support & Guest Relations Guidance",
+    deterministicSteps: [
+      "Understand the fan's core inquiry or problem calmly.",
+      "Refer to the matchday pocket-guide or stadium signage for direct resolution.",
+      "If unresolved in 2 minutes, escalate to the nearest concourse Info Desk."
+    ]
+  };
 
-    case "SECURITY":
-      escalationTarget = "Stadium Security Command & Local Law Enforcement Liaison";
-      recommendedActionPath = riskLevel === "EMERGENCY"
-        ? "Active Hostility Containment Protocol & Rapid Security Intervention"
-        : "Security Patrol Sector Re-route & Incident Documentation";
+  const escalationTarget = rule.escalationTarget;
+  const recommendedActionPath = typeof rule.recommendedActionPath === "function"
+    ? rule.recommendedActionPath(riskLevel)
+    : rule.recommendedActionPath;
 
-      safetyWarnings.push("NEVER put yourself or other volunteers in physical danger. Stand back and observe.");
-      safetyWarnings.push("Do NOT attempt to physically restrain or engage with aggressive individuals.");
-
-      deterministicSteps.push("Observe from a safe distance of at least 5-10 meters.");
-      deterministicSteps.push("Note physical descriptions of key subjects (height, attire, shirt numbers, physical markings).");
-      deterministicSteps.push("Advise nearby spectators to move calmly away from the active containment zone.");
-      break;
-
-    case "LOST_CHILD":
-      escalationTarget = "Venue Operations Center (VOC) & Safeguarding Officer";
-      recommendedActionPath = "Coordinated Multi-Sector Sweep & Perimeter Gate Lockout Alert";
-
-      safetyWarnings.push("A volunteer must NEVER be left alone with a child. Always ensure at least two volunteers or staff are present.");
-      safetyWarnings.push("Do not broadcast the child's full name over public speakers to ensure child safeguarding.");
-
-      deterministicSteps.push("Ensure two registered volunteers remain with the child/parent at all times.");
-      deterministicSteps.push("Obtain full physical description of child: clothing colors, age, height, and name.");
-      deterministicSteps.push("Notify the Safeguarding Officer to alert exit gates and begin a systematic sweep of the Sector.");
-      break;
-
-    case "CROWDING":
-      escalationTarget = "Crowd Management Command & Sector Gate Managers";
-      recommendedActionPath = riskLevel === "EMERGENCY"
-        ? "Gate Lockout Holding & Emergency Concave Bypass Route Activation"
-        : "Queue Metering & Concourse Flow Redirection";
-
-      safetyWarnings.push("Avoid building static blockages. Keep walking paths dynamic and clear.");
-      safetyWarnings.push("Ensure emergency exits are not locked or chained under any circumstances.");
-
-      deterministicSteps.push("Immediately open any secondary bypass lanes or exit-only auxiliary gates.");
-      deterministicSteps.push("Use mega-megaphones to direct fans to adjacent, less crowded concourse zones.");
-      deterministicSteps.push("Monitor crowd density at turnstiles and suspend entry briefly if platforms are oversaturated.");
-      break;
-
-    case "ACCESSIBILITY":
-      escalationTarget = "Spectator Services Mobility Team";
-      recommendedActionPath = "Mobility Shuttle/Golf Cart Dispatch & Elevator Bypass Routing";
-
-      deterministicSteps.push("Assess if the spectator requires a manual wheelchair or a motorized golf cart.");
-      deterministicSteps.push("Accompany the visitor to the nearest designated priority elevator or ramp.");
-      deterministicSteps.push("Coordinate with Spectator Services to confirm accessible seat compatibility.");
-      break;
-
-    case "LOST_ITEM":
-      escalationTarget = "Stadium Lost & Found Registry Office";
-      recommendedActionPath = "Digital Item Entry & Guest Retrieval Ticket Issuance";
-
-      deterministicSteps.push("Inspect the item visually for security hazards before handling (do not open unattended luggage).");
-      deterministicSteps.push("Record the item description, seat location found, and timestamp into the operational database.");
-      deterministicSteps.push("Direct the guest to the nearest Info Desk or issue a standard Lost & Found claim receipt.");
-      break;
-
-    case "SUSTAINABILITY":
-      escalationTarget = "Venue Facilities & Recycling Zero-Waste Crew";
-      recommendedActionPath = "Janitorial Service Dispatch & Recycling Bin Re-sort Operations";
-
-      deterministicSteps.push("Assess if there are hazardous waste components involved (spills, glass).");
-      deterministicSteps.push("Mark the sorting bin or trash area for priority pickup by the zero-waste crew.");
-      deterministicSteps.push("Advise guests on correct placement of reusable stadium cups and plastic bottle recyclables.");
-      break;
-
-    case "NAVIGATION":
-      escalationTarget = "Wayfinding Volunteer Coordinator";
-      recommendedActionPath = "Standard Wayfinding Assistance & Digital Map Sharing";
-
-      safetyWarnings.push("Do not send guests through restricted team/media tunnels or exit-only emergency doors.");
-
-      deterministicSteps.push("Identify the spectator's target location (Sector, Gate, Suite, or Concessions).");
-      deterministicSteps.push("Point the guest in the correct physical direction and provide a digital map scan QR code.");
-      deterministicSteps.push("If the guest has a mobility request, check accessibility pathways and redirect as needed.");
-      break;
-
-    case "TRANSPORT":
-      escalationTarget = "Transport & Traffic Operations Center (TOC)";
-      recommendedActionPath = "Transit Dispatch & Park-and-Ride Shuttle Routing";
-
-      safetyWarnings.push("Remind guests to remain on designated walkways and avoid walking onto active vehicle roadways.");
-
-      deterministicSteps.push("Confirm destination (e.g. Park-and-Ride, Metro Station, rideshare lot, or Airport).");
-      deterministicSteps.push("Provide schedule info for the stadium express buses and nearest Metro departure gates.");
-      deterministicSteps.push("Direct the guest to the safe, illuminated transport boarding corridors outside the gates.");
-      break;
-
-    case "MULTILINGUAL":
-      escalationTarget = "Volunteer Language Services Hub";
-      recommendedActionPath = "Bilingual Ambassador Dispatch & Digital Language Service Connection";
-
-      deterministicSteps.push("Identify the spectator's preferred language (e.g., Spanish, French, German, Arabic).");
-      deterministicSteps.push("Use the preset multilingual translation script or the remote translation hot-channel.");
-      deterministicSteps.push("Guide the fan visually using standard stadium iconography and stadium map panels.");
-      break;
-
-    default:
-      escalationTarget = "Sector Supervisor";
-      recommendedActionPath = "Standard Volunteer Support & Guest Relations Guidance";
-
-      deterministicSteps.push("Understand the fan's core inquiry or problem calmly.");
-      deterministicSteps.push("Refer to the matchday pocket-guide or stadium signage for direct resolution.");
-      deterministicSteps.push("If unresolved in 2 minutes, escalate to the nearest concourse Info Desk.");
-      break;
-  }
+  const safetyWarnings = rule.safetyWarnings ? [...rule.safetyWarnings] : [];
+  const deterministicSteps = [...rule.deterministicSteps];
 
   // General operational reasoning
   if (!operationalReasoning) {

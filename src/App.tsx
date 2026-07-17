@@ -58,13 +58,12 @@ export default function App() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchIncidents();
   }, []);
 
-  // Reset checklists when response updates
+  // Scroll to response when response updates
   useEffect(() => {
-    setCheckedSteps({});
-    setCheckedDetails({});
     if (response && responseRef.current) {
       responseRef.current.scrollIntoView({ behavior: "smooth" });
     }
@@ -75,10 +74,14 @@ export default function App() {
     setAnnouncement("Scenario loaded into textarea. Word count is updated.");
   };
 
+
+
   const handleClear = () => {
     setSituation("");
     setResponse(null);
     setError(null);
+    setCheckedSteps({});
+    setCheckedDetails({});
     setAnnouncement("Form cleared.");
   };
 
@@ -91,6 +94,8 @@ export default function App() {
 
     setLoading(true);
     setError(null);
+    setCheckedSteps({});
+    setCheckedDetails({});
     setAnnouncement("Analyzing situation. Querying the StadiumSense AI engine...");
 
     try {
@@ -118,8 +123,9 @@ export default function App() {
       setAnnouncement(`Analysis completed. Identified category: ${data.analysis.category} with ${data.analysis.riskLevel} risk level.`);
       // Refresh persistent incident log
       fetchIncidents();
-    } catch (err: any) {
-      setError(err.message || "Failed to connect to the StadiumSense engine.");
+    } catch (err: unknown) {
+      const errorMsg = (err as Error).message || "Failed to connect to the StadiumSense engine.";
+      setError(errorMsg);
       setAnnouncement("Analysis failed due to error.");
     } finally {
       setLoading(false);
@@ -138,8 +144,9 @@ export default function App() {
       } else {
         throw new Error(data.error || "Diagnostic test execution failed.");
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to run diagnostics.");
+    } catch (err: unknown) {
+      const errorMsg = (err as Error).message || "Failed to run diagnostics.";
+      setError(errorMsg);
       setAnnouncement("Diagnostics execution failed.");
     } finally {
       setRunningTests(false);
@@ -267,7 +274,7 @@ export default function App() {
               ) : (
                 <div className={`border border-dashed rounded-xl py-24 flex flex-col items-center justify-center text-center p-6 transition-all duration-200 ${
                   theme === "dark" 
-                    ? "bg-[#0d1117]/30 border-gray-800 text-gray-500" 
+                    ? "bg-[#0d1117]/30 border-gray-800 text-gray-400" 
                     : "bg-white border-slate-200 text-slate-400 shadow-sm"
                 }`}>
                   <p className="text-xs font-mono tracking-wider max-w-sm">
@@ -288,7 +295,7 @@ export default function App() {
       </main>
 
       <footer className={`border-t mt-auto py-6 text-center text-xs font-mono transition-colors duration-200 ${
-        theme === "dark" ? "border-gray-800 text-gray-500" : "border-slate-200 text-slate-500"
+        theme === "dark" ? "border-gray-800 text-gray-400" : "border-slate-200 text-slate-500"
       }`}>
         <p className="max-w-md mx-auto leading-relaxed">
           &copy; 2026 World Cup Stadium Operations Command. Designed for official venue volunteers, stewards, and managers. Powered by StadiumSense AI.
