@@ -6,10 +6,10 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy dependency configuration files first for efficient Docker layer caching
-COPY package.json ./
+COPY package.json package-lock.json ./
 
 # Install all dependencies (including devDependencies required for compilation)
-RUN npm install
+RUN npm ci
 
 # Copy all source files
 COPY . .
@@ -29,10 +29,10 @@ ENV PORT=3000
 WORKDIR /app
 
 # Copy package.json to manage production-only dependencies
-COPY package.json ./
+COPY package.json package-lock.json ./
 
 # Install only production dependencies to keep the image slim and secure
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
 # Copy compiled frontend assets and backend bundle from builder stage
 COPY --from=builder /app/dist ./dist

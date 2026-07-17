@@ -130,3 +130,13 @@ npm test
 - **Simulated Stadium Feeds**: Uses simulated coordinates for Houston, TX NRG Stadium during matchday.
 - **Emergency Deferral**: Designed strictly to aid volunteer decision-making; it does not replace official, localized stadium emergency response instructions.
 - **Safety Hardening**: Highly resilient offline fallback mechanisms ensure zero disruption to volunteers during wireless connectivity failures or peak cellular congestion.
+
+---
+
+## 🔮 Future Work & Production Considerations
+
+While StadiumSense AI is optimized for simulated matchday scenarios, scaling it to a real-world enterprise deployment would involve:
+1. **User Authentication & RBAC**: Integrating Single Sign-On (SSO) and Role-Based Access Control (RBAC) to ensure only authorized venue volunteers and security command operators can access operational checklists.
+2. **Persistent Incident Database**: Replacing the current session-based in-memory history log with a persistent relational database (e.g. Cloud SQL or Spanner) for analytics, search, and post-match audit reporting.
+3. **Geo-tracking Integration**: Linking live GPS location beacons of active volunteer smartphones to map incident reports automatically without requiring manual sector selection.
+4. **WebSocket Push Notifications**: Using WebSockets to broadcast active emergency dispatches to nearby stewards' devices instantly in real-time.

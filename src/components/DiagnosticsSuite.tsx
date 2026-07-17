@@ -51,6 +51,7 @@ export function DiagnosticsSuite({
         <button
           onClick={runDiagnostics}
           disabled={runningTests}
+          aria-label="Re-run safety decision engine diagnostics test suite"
           className="text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded py-2 px-4 transition-all cursor-pointer border border-transparent shadow-[0_0_15px_rgba(37,99,235,0.4)]"
         >
           {runningTests ? "Executing Diagnostics..." : "Re-run Test Suite"}

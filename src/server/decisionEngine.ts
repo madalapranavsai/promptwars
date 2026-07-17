@@ -1,13 +1,4 @@
-import { ContextAnalysis } from "./contextAnalyzer";
-
-export interface DecisionResult {
-  escalationRequired: boolean;
-  escalationTarget: string;
-  recommendedActionPath: string;
-  deterministicSteps: string[];
-  safetyWarnings: string[];
-  operationalReasoning: string;
-}
+import { ContextAnalysis, DecisionResult } from "../shared/types";
 
 export function getDeterministicDecision(
   analysis: ContextAnalysis,

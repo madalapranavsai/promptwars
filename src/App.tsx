@@ -4,70 +4,8 @@ import { ScenarioPresets } from "./components/ScenarioPresets";
 import { SituationForm } from "./components/SituationForm";
 import { GuidancePanel } from "./components/GuidancePanel";
 import { DiagnosticsSuite } from "./components/DiagnosticsSuite";
-
-// TypeScript Interfaces for strict type safety
-export interface ContextAnalysis {
-  category: "MEDICAL" | "SECURITY" | "ACCESSIBILITY" | "LOST_CHILD" | "LOST_ITEM" | "CROWDING" | "SUSTAINABILITY" | "MULTILINGUAL" | "TRANSPORT" | "NAVIGATION" | "GENERAL";
-  riskLevel: "EMERGENCY" | "HIGH" | "MEDIUM" | "LOW";
-  intent: "REPORT" | "REQUEST_HELP" | "ASK";
-  detectedLanguage: "en" | "es" | "fr" | "de" | "pt" | "ja" | "zh" | "ko" | "ar";
-  missingDetails: string[];
-}
-
-export interface DecisionResult {
-  escalationRequired: boolean;
-  escalationTarget: string;
-  recommendedActionPath: string;
-  deterministicSteps: string[];
-  safetyWarnings: string[];
-  operationalReasoning: string;
-}
-
-export interface AIResult {
-  recommendation: string;
-  script: string;
-  nextSteps: string[];
-  reasoning: string;
-  followUpQuestion: string;
-}
-
-export interface LocalizedScript {
-  languageName: string;
-  greeting: string;
-  reassurance: string;
-  locationPrompt: string;
-  actionDirective: string;
-  closing: string;
-}
-
-export interface FinalResponse {
-  analysis: ContextAnalysis;
-  decision: DecisionResult;
-  aiOutput: AIResult;
-  localizedScripts: Record<string, LocalizedScript>;
-  timestamp: string;
-}
-
-export interface TestDetail {
-  name: string;
-  passed: boolean;
-  input: string;
-  category: string;
-  riskLevel: string;
-  escalationRequired: boolean;
-  escalationTarget: string;
-  expectedCategory: string;
-  expectedRisk: string;
-  expectedEscalation: boolean;
-  expectedTarget: string;
-  errorDetails?: string;
-}
-
-export interface TestSuiteResults {
-  passed: number;
-  total: number;
-  details: TestDetail[];
-}
+import { IncidentHistory } from "./components/IncidentHistory";
+import { FinalResponse, TestSuiteResults, IncidentRecord } from "./shared/types";
 
 export default function App() {
   const [theme, setTheme] = useState<"light" | "dark">(() => {
@@ -95,6 +33,9 @@ export default function App() {
   const [testSuiteResults, setTestSuiteResults] = useState<TestSuiteResults | null>(null);
   const [runningTests, setRunningTests] = useState(false);
 
+  // Incident history state
+  const [incidents, setIncidents] = useState<IncidentRecord[]>([]);
+
   // Auto scroll to response ref
   const responseRef = useRef<HTMLDivElement>(null);
 
@@ -102,6 +43,23 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("stadiumsense-theme", theme);
   }, [theme]);
+
+  // Load incident history
+  const fetchIncidents = async () => {
+    try {
+      const res = await fetch("/api/incidents");
+      const data = await res.json();
+      if (data.success) {
+        setIncidents(data.incidents);
+      }
+    } catch (err) {
+      console.error("Failed to load incidents:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchIncidents();
+  }, []);
 
   // Reset checklists when response updates
   useEffect(() => {
@@ -158,6 +116,8 @@ export default function App() {
       const data = (await res.json()) as FinalResponse;
       setResponse(data);
       setAnnouncement(`Analysis completed. Identified category: ${data.analysis.category} with ${data.analysis.riskLevel} risk level.`);
+      // Refresh persistent incident log
+      fetchIncidents();
     } catch (err: any) {
       setError(err.message || "Failed to connect to the StadiumSense engine.");
       setAnnouncement("Analysis failed due to error.");
@@ -221,6 +181,14 @@ export default function App() {
     <div className={`min-h-screen font-sans antialiased flex flex-col selection:bg-blue-600/30 selection:text-white transition-colors duration-200 ${
       theme === "dark" ? "bg-[#05070a] text-gray-200" : "bg-[#f8fafc] text-slate-850"
     }`}>
+      {/* Keyboard Skip to Content Link */}
+      <a 
+        href="#main-content" 
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:font-bold focus:rounded focus:outline-hidden focus:shadow-md"
+      >
+        Skip to content
+      </a>
+
       {/* Hidden live announcer for screen readers */}
       <div className="sr-only" aria-live="polite" id="accessibility-announcer">
         {announcement}
@@ -236,10 +204,13 @@ export default function App() {
         setAnnouncement={setAnnouncement}
       />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col space-y-6">
+      <main 
+        id="main-content"
+        className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col space-y-6"
+      >
         {activeTab === "copilot" ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* Left Column - Preset Scenario Dash and Reporting Form */}
+            {/* Left Column - Preset Scenario Dash, Reporting Form, and Incident Log */}
             <div className="lg:col-span-5 space-y-6">
               <ScenarioPresets
                 theme={theme}
@@ -260,6 +231,10 @@ export default function App() {
                 loading={loading}
                 handleSubmit={handleSubmit}
                 handleClear={handleClear}
+              />
+              <IncidentHistory 
+                theme={theme}
+                incidents={incidents}
               />
             </div>
 

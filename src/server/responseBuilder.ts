@@ -1,23 +1,16 @@
-import { analyzeContext, ContextAnalysis } from "./contextAnalyzer";
-import { getDeterministicDecision, DecisionResult } from "./decisionEngine";
-import { generateAIResponse, AIResult } from "./aiAdapter";
+import { analyzeContext } from "./contextAnalyzer";
+import { getDeterministicDecision } from "./decisionEngine";
+import { generateAIResponse } from "./aiAdapter";
+import { 
+  ContextAnalysis, 
+  DecisionResult, 
+  AIResult, 
+  LocalizedScript, 
+  FinalResponse, 
+  IncidentRecord 
+} from "../shared/types";
 
-export interface LocalizedScript {
-  languageName: string;
-  greeting: string;
-  reassurance: string;
-  locationPrompt: string;
-  actionDirective: string;
-  closing: string;
-}
-
-export interface FinalResponse {
-  analysis: ContextAnalysis;
-  decision: DecisionResult;
-  aiOutput: AIResult;
-  localizedScripts: Record<string, LocalizedScript>;
-  timestamp: string;
-}
+export const incidentHistory: IncidentRecord[] = [];
 
 // Full translation dictionary supporting all 9 languages
 const translationDictionary: Record<string, { languageName: string } & Omit<LocalizedScript, "languageName">> = {
@@ -111,7 +104,8 @@ export async function buildFullResponse(
     urgencyOverride?: string;
     targetLanguage?: string;
     bypassCache?: boolean;
-  }
+  },
+  bypassAI?: boolean
 ): Promise<FinalResponse> {
   const cacheKey = JSON.stringify({
     text: userText.trim(),
@@ -147,7 +141,7 @@ export async function buildFullResponse(
   const decision = getDeterministicDecision(analysis, userText);
 
   // 3. Request LLM AI Directives (with rule fallback)
-  const aiOutput = await generateAIResponse(userText, analysis, decision);
+  const aiOutput = await generateAIResponse(userText, analysis, decision, bypassAI);
 
   // 4. Gather localized sheets for volunteers (Bilingual support)
   const localizedScripts: Record<string, LocalizedScript> = {};
@@ -183,10 +177,32 @@ export async function buildFullResponse(
     timestamp: new Date().toISOString()
   };
 
+  // Enforce size cap cache eviction (FIFO)
+  if (responseCache.size >= 100) {
+    const firstKey = responseCache.keys().next().value;
+    if (firstKey !== undefined) {
+      responseCache.delete(firstKey);
+    }
+  }
+
   responseCache.set(cacheKey, {
     response: result,
     expiresAt: Date.now() + CACHE_TTL_MS
   });
+
+  // Record incident to memory history log
+  const record: IncidentRecord = {
+    id: Math.random().toString(36).substring(2, 11),
+    timestamp: result.timestamp,
+    situation: userText,
+    category: result.analysis.category,
+    riskLevel: result.analysis.riskLevel,
+    recommendation: result.aiOutput.recommendation
+  };
+  incidentHistory.push(record);
+  if (incidentHistory.length > 50) {
+    incidentHistory.shift();
+  }
 
   return result;
 }

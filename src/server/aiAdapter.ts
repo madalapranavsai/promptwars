@@ -1,14 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { ContextAnalysis } from "./contextAnalyzer";
-import { DecisionResult } from "./decisionEngine";
-
-export interface AIResult {
-  recommendation: string;
-  script: string;
-  nextSteps: string[];
-  reasoning: string;
-  followUpQuestion: string;
-}
+import { ContextAnalysis, DecisionResult, AIResult } from "../shared/types";
 
 let aiInstance: GoogleGenAI | null = null;
 
@@ -29,9 +20,10 @@ function getGemini(): GoogleGenAI | null {
 export async function generateAIResponse(
   userText: string,
   analysis: ContextAnalysis,
-  decision: DecisionResult
+  decision: DecisionResult,
+  bypassAI?: boolean
 ): Promise<AIResult> {
-  const ai = getGemini();
+  const ai = bypassAI ? null : getGemini();
 
   const prompt = `
 You are the AI engine for StadiumSense AI, a matchday operations copilot for the 2026 World Cup stadiums.

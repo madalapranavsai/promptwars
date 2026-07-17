@@ -96,6 +96,7 @@ export function ScenarioPresets({ theme, handlePresetClick }: ScenarioPresetsPro
           <button
             key={preset.id}
             onClick={() => handlePresetClick(preset.text)}
+            aria-label={`Load preset scenario for ${preset.label}`}
             className={`text-xs px-3 py-2 border rounded font-medium cursor-pointer transition-all ${getPresetStyle(preset.id, preset.color)}`}
           >
             {preset.label}

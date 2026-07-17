@@ -1,10 +1,4 @@
-export interface ContextAnalysis {
-  category: "MEDICAL" | "SECURITY" | "ACCESSIBILITY" | "LOST_CHILD" | "LOST_ITEM" | "CROWDING" | "SUSTAINABILITY" | "MULTILINGUAL" | "TRANSPORT" | "NAVIGATION" | "GENERAL";
-  riskLevel: "EMERGENCY" | "HIGH" | "MEDIUM" | "LOW";
-  intent: "REPORT" | "REQUEST_HELP" | "ASK";
-  detectedLanguage: "en" | "es" | "fr" | "de" | "pt" | "ja" | "zh" | "ko" | "ar";
-  missingDetails: string[];
-}
+import { ContextAnalysis } from "../shared/types";
 
 export function analyzeContext(text: string): ContextAnalysis {
   const normalized = text.toLowerCase();
