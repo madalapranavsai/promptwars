@@ -67,14 +67,25 @@ A strict guardrail layer that prevents AI hallucinations for high-risk situation
 ```text
 ├── src/
 │   ├── App.tsx                     # Main interactive user dashboard & design workspace
-│   ├── index.css                   # Global Tailwind configuration with Inter & JetBrains Mono font definitions
+│   ├── index.css                   # CSS styles with Inter & JetBrains Mono font definitions
+│   ├── components/                 # Extracted UI React component modules
+│   ├── shared/
+│   │   └── types.ts                # Unified TypeScript type definitions module
 │   └── server/
 │       ├── aiAdapter.ts            # Secure Gemini/OpenAI API routing and template fallbacks
 │       ├── contextAnalyzer.ts      # Keyword detection, language categorization & intent parser
-│       ├── decisionEngine.ts       # Deterministic safety protocols & VIP/Escalation rules
-│       ├── decisionEngine.test.ts  # Logic gate test suite
+│       ├── decisionEngine.ts       # Deterministic safety protocols & config rules lookup
+│       ├── decisionEngine.spec.ts  # Vitest safety logic unit tests
+│       ├── api.spec.ts             # Supertest API E2E integration tests
+│       ├── diagnosticsRunner.ts    # Operations logic gate diagnostics runner
 │       └── responseBuilder.ts      # Core orchestrator unifying rules and generated text
+├── .agents/
+│   └── AGENTS.md                   # Project-scoped Ponytail developer heuristics
+├── .github/
+│   └── workflows/
+│       └── ci.yml                  # GitHub Actions CI workflow (linting & testing)
 ├── server.ts                       # Express backend server serving static bundle & hosting APIs
+├── eslint.config.js                # ESLint flat rule configuration
 ├── PRD.md                          # Product Requirements Document
 ├── architecture.md                 # System diagrams, data flow sheets & performance considerations
 ├── rules.md                        # Strict submission parameters, development guidelines & safety standards
