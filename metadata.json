@@ -1,0 +1,6 @@
+{
+  "name": "StadiumSense AI",
+  "description": "A high-performance matchday operations copilot for 2026 World Cup stadium staff and volunteers, combining deterministic safety rules with Gemini AI for real-time situational guidance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
